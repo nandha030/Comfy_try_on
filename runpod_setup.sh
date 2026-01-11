@@ -22,7 +22,9 @@ echo "[2/8] Cloning repository..."
 if [ -d "comify" ]; then
     echo "Repository already exists, pulling latest..."
     cd comify
-    git pull
+    git fetch --all
+    git reset --hard origin/main
+    echo "Updated to latest version"
 else
     git clone https://github.com/nandha030/comify.git
     cd comify

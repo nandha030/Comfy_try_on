@@ -132,15 +132,88 @@ def copy_to_comfyui_input(source_path: Path, prefix: str = "") -> str:
 
 
 def get_available_models() -> List[dict]:
-    """Get list of available checkpoint models"""
-    models_dir = BASE_DIR.parent / "ComfyUI" / "models" / "checkpoints"
+    """Get list of available checkpoint models from both ComfyUI and V2 models directories"""
     models = []
-    if models_dir.exists():
-        for f in models_dir.glob("*.safetensors"):
-            models.append({"name": f.stem, "file": f.name, "type": "safetensors"})
-        for f in models_dir.glob("*.ckpt"):
-            models.append({"name": f.stem, "file": f.name, "type": "ckpt"})
+
+    # Check ComfyUI models directory
+    comfyui_models_dir = BASE_DIR.parent / "ComfyUI" / "models" / "checkpoints"
+    if comfyui_models_dir.exists():
+        for f in comfyui_models_dir.glob("*.safetensors"):
+            models.append({"name": f.stem, "file": f.name, "type": "safetensors", "source": "comfyui"})
+        for f in comfyui_models_dir.glob("*.ckpt"):
+            models.append({"name": f.stem, "file": f.name, "type": "ckpt", "source": "comfyui"})
+
+    # Check V2 models directory (our downloaded models)
+    v2_models_dir = BASE_DIR.parent / "models"
+    if v2_models_dir.exists():
+        # Check for base models
+        base_models_dir = v2_models_dir / "base_models"
+        if base_models_dir.exists():
+            for f in base_models_dir.glob("*.safetensors"):
+                models.append({"name": f.stem, "file": f.name, "type": "safetensors", "source": "v2"})
+            for f in base_models_dir.glob("*.ckpt"):
+                models.append({"name": f.stem, "file": f.name, "type": "ckpt", "source": "v2"})
+
+        # Check for checkpoints directory
+        checkpoints_dir = v2_models_dir / "checkpoints"
+        if checkpoints_dir.exists():
+            for f in checkpoints_dir.glob("*.safetensors"):
+                models.append({"name": f.stem, "file": f.name, "type": "safetensors", "source": "v2"})
+            for f in checkpoints_dir.glob("*.ckpt"):
+                models.append({"name": f.stem, "file": f.name, "type": "ckpt", "source": "v2"})
+
     return models
+
+
+def check_v2_models_available() -> dict:
+    """Check which V2 AI models are available"""
+    v2_models_dir = BASE_DIR.parent / "models"
+    status = {
+        "available": False,
+        "face_detection": False,
+        "body_pose": False,
+        "base_model": False,
+        "inpainting": False,
+        "models_found": []
+    }
+
+    if not v2_models_dir.exists():
+        return status
+
+    # Check for InsightFace models
+    insightface_dir = v2_models_dir / "insightface"
+    if insightface_dir.exists():
+        if any(insightface_dir.glob("**/*.onnx")):
+            status["face_detection"] = True
+            status["models_found"].append("insightface")
+
+    # Check for DWPose models
+    dwpose_dir = v2_models_dir / "dwpose"
+    if dwpose_dir.exists():
+        if any(dwpose_dir.glob("*.onnx")):
+            status["body_pose"] = True
+            status["models_found"].append("dwpose")
+
+    # Check for base models
+    base_models_dir = v2_models_dir / "base_models"
+    checkpoints_dir = v2_models_dir / "checkpoints"
+    for models_dir in [base_models_dir, checkpoints_dir]:
+        if models_dir and models_dir.exists():
+            if any(models_dir.glob("*.safetensors")) or any(models_dir.glob("*.ckpt")):
+                status["base_model"] = True
+                status["models_found"].append("base_model")
+                break
+
+    # Check for inpainting model
+    if base_models_dir and base_models_dir.exists():
+        if any(base_models_dir.glob("*inpaint*")) or any(base_models_dir.glob("*inpainting*")):
+            status["inpainting"] = True
+            status["models_found"].append("inpainting")
+
+    # V2 is available if we have at least face detection or base model
+    status["available"] = status["face_detection"] or status["base_model"]
+
+    return status
 
 
 def build_tryon_workflow(
@@ -341,7 +414,7 @@ async def root():
 
 @app.get("/api/health")
 async def health_check():
-    """Check system health"""
+    """Check system health - returns healthy if either ComfyUI OR V2 models are available"""
     comfyui_status = "disconnected"
     try:
         async with aiohttp.ClientSession() as session:
@@ -351,9 +424,17 @@ async def health_check():
     except:
         pass
 
+    # Check V2 models availability
+    v2_models = check_v2_models_available()
+
+    # System is healthy if ComfyUI is connected OR V2 models are available
+    is_healthy = comfyui_status == "connected" or v2_models["available"]
+
     return {
-        "status": "healthy" if comfyui_status == "connected" else "degraded",
+        "status": "healthy" if is_healthy else "degraded",
         "comfyui": comfyui_status,
+        "v2_engine": "ready" if v2_models["available"] else "not_available",
+        "v2_models": v2_models,
         "database": "connected",
         "models": get_available_models()
     }

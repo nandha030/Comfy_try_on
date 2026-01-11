@@ -97,6 +97,10 @@ export default function Home() {
         if (data.models) {
           setAvailableModels(data.models)
         }
+        // Check if V2 engine is available from health response
+        if (data.v2_engine === 'ready') {
+          setV2Available(true)
+        }
       } catch {
         setSystemStatus('degraded')
       }
@@ -329,7 +333,7 @@ export default function Home() {
                 />
                 <span className="text-sm text-gray-500">
                   {systemStatus === 'healthy' ? 'System Ready' :
-                   systemStatus === 'degraded' ? 'ComfyUI Offline' : 'Checking...'}
+                   systemStatus === 'degraded' ? 'No AI Models Found' : 'Checking...'}
                 </span>
               </div>
             </div>
