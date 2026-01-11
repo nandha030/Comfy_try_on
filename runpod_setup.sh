@@ -10,15 +10,15 @@ echo "=========================================="
 
 # Check GPU
 echo ""
-echo "[1/7] Checking GPU..."
-nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader
+echo "[1/8] Checking GPU..."
+nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader || echo "No GPU detected (CPU mode)"
 echo ""
 
 # Navigate to workspace
 cd /workspace
 
 # Clone repository
-echo "[2/7] Cloning repository..."
+echo "[2/8] Cloning repository..."
 if [ -d "comify" ]; then
     echo "Repository already exists, pulling latest..."
     cd comify
@@ -28,9 +28,22 @@ else
     cd comify
 fi
 
+# Install Node.js if not present
+echo ""
+echo "[3/8] Checking Node.js..."
+if ! command -v npm &> /dev/null; then
+    echo "Installing Node.js 20.x..."
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+    apt-get install -y nodejs
+    echo "Node.js installed: $(node --version)"
+    echo "npm installed: $(npm --version)"
+else
+    echo "Node.js already installed: $(node --version)"
+fi
+
 # Create virtual environment
 echo ""
-echo "[3/7] Setting up Python environment..."
+echo "[4/8] Setting up Python environment..."
 python3 -m venv venv
 source venv/bin/activate
 
@@ -39,12 +52,12 @@ pip install --upgrade pip setuptools wheel
 
 # Install PyTorch with CUDA
 echo ""
-echo "[4/7] Installing PyTorch with CUDA..."
+echo "[5/8] Installing PyTorch with CUDA..."
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
 
 # Install requirements
 echo ""
-echo "[5/7] Installing dependencies..."
+echo "[6/8] Installing Python dependencies..."
 pip install -r requirements.txt
 
 # Install additional AI packages
@@ -52,22 +65,28 @@ pip install insightface onnxruntime-gpu segment-anything controlnet-aux accelera
 
 # Install frontend dependencies
 echo ""
-echo "[6/7] Setting up frontend..."
+echo "[7/8] Setting up frontend..."
 cd frontend
 npm install
 npm run build
 cd ..
 
 # Create data directories
-mkdir -p models data backend/data/results backend/data/uploads
+mkdir -p models data backend/data/results backend/data/uploads logs
 
 # Create start script
 echo ""
-echo "[7/7] Creating start script..."
+echo "[8/8] Creating start script..."
 cat > start_comify.sh << 'STARTSCRIPT'
 #!/bin/bash
 source /workspace/comify/venv/bin/activate
 cd /workspace/comify
+mkdir -p logs
+
+# Kill any existing processes
+pkill -f "uvicorn main:app" 2>/dev/null || true
+pkill -f "next start" 2>/dev/null || true
+sleep 2
 
 # Start backend
 echo "Starting backend on port 8000..."
@@ -75,6 +94,9 @@ cd backend
 nohup python -m uvicorn main:app --host 0.0.0.0 --port 8000 > ../logs/backend.log 2>&1 &
 BACKEND_PID=$!
 echo "Backend PID: $BACKEND_PID"
+
+# Wait for backend to start
+sleep 3
 
 # Start frontend
 echo "Starting frontend on port 3000..."
@@ -84,37 +106,48 @@ FRONTEND_PID=$!
 echo "Frontend PID: $FRONTEND_PID"
 
 cd ..
-mkdir -p logs
 
 echo ""
 echo "=========================================="
 echo "  Comify is running!"
 echo "=========================================="
 echo ""
-echo "Backend:  http://localhost:8000"
-echo "Frontend: http://localhost:3000"
+echo "Backend API:  http://localhost:8000"
+echo "Frontend UI:  http://localhost:3000"
 echo ""
-echo "Access via RunPod proxy:"
-echo "  Backend:  https://YOUR_POD_ID-8000.proxy.runpod.net"
-echo "  Frontend: https://YOUR_POD_ID-3000.proxy.runpod.net"
+echo "Health check: curl http://localhost:8000/api/health"
 echo ""
-echo "Logs:"
+echo "View logs:"
 echo "  tail -f logs/backend.log"
 echo "  tail -f logs/frontend.log"
 echo ""
-echo "To stop: pkill -f uvicorn && pkill -f 'npm start'"
+echo "To stop: pkill -f uvicorn && pkill -f 'next start'"
 STARTSCRIPT
 chmod +x start_comify.sh
+
+# Create stop script
+cat > stop_comify.sh << 'STOPSCRIPT'
+#!/bin/bash
+echo "Stopping Comify..."
+pkill -f "uvicorn main:app" 2>/dev/null || true
+pkill -f "next start" 2>/dev/null || true
+echo "Stopped."
+STOPSCRIPT
+chmod +x stop_comify.sh
 
 echo ""
 echo "=========================================="
 echo "  Setup Complete!"
 echo "=========================================="
 echo ""
-echo "To start the application, run:"
+echo "To start the application:"
 echo "  cd /workspace/comify"
 echo "  ./start_comify.sh"
 echo ""
-echo "Optional: Download AI models (recommended for best results):"
+echo "To stop the application:"
+echo "  ./stop_comify.sh"
+echo ""
+echo "Optional: Download AI models for better results:"
+echo "  source venv/bin/activate"
 echo "  python -c \"from installer.model_downloader import ModelDownloader; d = ModelDownloader('./models'); d.download_all()\""
 echo ""
