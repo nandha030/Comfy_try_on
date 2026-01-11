@@ -1,0 +1,61 @@
+# Comify Virtual Try-On - RunPod Serverless Deployment
+# Optimized for RunPod's serverless infrastructure
+
+FROM runpod/pytorch:2.1.0-py3.10-cuda12.1.0-devel-ubuntu22.04
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV DEBIAN_FRONTEND=noninteractive
+ENV MODELS_DIR=/app/models
+ENV HF_HOME=/app/.cache/huggingface
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgomp1 \
+    ffmpeg \
+    git \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements
+COPY requirements.txt /app/
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Install additional AI dependencies with GPU support
+RUN pip install --no-cache-dir \
+    insightface \
+    onnxruntime-gpu \
+    segment-anything \
+    controlnet-aux \
+    accelerate \
+    transformers \
+    diffusers \
+    safetensors \
+    xformers \
+    runpod
+
+# Copy application code
+COPY ai_engine /app/ai_engine
+COPY backend /app/backend
+COPY installer /app/installer
+COPY runpod_handler.py /app/
+
+# Create directories
+RUN mkdir -p /app/models /app/data /app/.cache
+
+# Pre-download models (optional - comment out for smaller image, download at runtime)
+# RUN python -c "from installer.model_downloader import ModelDownloader; d = ModelDownloader('/app/models'); d.download_category('insightface')"
+
+# Set the handler
+CMD ["python", "-u", "runpod_handler.py"]

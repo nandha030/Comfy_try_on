@@ -1,0 +1,169 @@
+{
+  "last_node_id": 10,
+  "last_link_id": 10,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "CheckpointLoaderSimple",
+      "pos": [50, 100],
+      "size": {"0": 315, "1": 98},
+      "outputs": [
+        {"name": "MODEL", "type": "MODEL", "links": [1]},
+        {"name": "CLIP", "type": "CLIP", "links": [2, 3]},
+        {"name": "VAE", "type": "VAE", "links": [4, 5]}
+      ],
+      "widgets_values": ["sd-v1-5-inpainting.safetensors"]
+    },
+    {
+      "id": 2,
+      "type": "LoadImage",
+      "pos": [50, 250],
+      "size": {"0": 315, "1": 314},
+      "outputs": [
+        {"name": "IMAGE", "type": "IMAGE", "links": [6]},
+        {"name": "MASK", "type": "MASK", "links": null}
+      ],
+      "title": "Load Person Image",
+      "widgets_values": ["person.png", "image"]
+    },
+    {
+      "id": 3,
+      "type": "LoadImage",
+      "pos": [50, 600],
+      "size": {"0": 315, "1": 314},
+      "outputs": [
+        {"name": "IMAGE", "type": "IMAGE", "links": null},
+        {"name": "MASK", "type": "MASK", "links": [7]}
+      ],
+      "title": "Load Mask Image",
+      "widgets_values": ["mask.png", "image"]
+    },
+    {
+      "id": 4,
+      "type": "CLIPTextEncode",
+      "pos": [400, 100],
+      "size": {"0": 400, "1": 200},
+      "inputs": [
+        {"name": "clip", "type": "CLIP", "link": 2}
+      ],
+      "outputs": [
+        {"name": "CONDITIONING", "type": "CONDITIONING", "links": [8]}
+      ],
+      "title": "Positive Prompt",
+      "widgets_values": ["person wearing fashionable clothing, high quality photo, professional, detailed fabric texture"]
+    },
+    {
+      "id": 5,
+      "type": "CLIPTextEncode",
+      "pos": [400, 350],
+      "size": {"0": 400, "1": 200},
+      "inputs": [
+        {"name": "clip", "type": "CLIP", "link": 3}
+      ],
+      "outputs": [
+        {"name": "CONDITIONING", "type": "CONDITIONING", "links": [9]}
+      ],
+      "title": "Negative Prompt",
+      "widgets_values": ["blurry, distorted, low quality, deformed hands, extra limbs, bad anatomy, ugly, disfigured"]
+    },
+    {
+      "id": 6,
+      "type": "VAEEncode",
+      "pos": [400, 600],
+      "size": {"0": 210, "1": 46},
+      "inputs": [
+        {"name": "pixels", "type": "IMAGE", "link": 6},
+        {"name": "vae", "type": "VAE", "link": 4}
+      ],
+      "outputs": [
+        {"name": "LATENT", "type": "LATENT", "links": [10]}
+      ]
+    },
+    {
+      "id": 7,
+      "type": "SetLatentNoiseMask",
+      "pos": [650, 600],
+      "size": {"0": 210, "1": 46},
+      "inputs": [
+        {"name": "samples", "type": "LATENT", "link": 10},
+        {"name": "mask", "type": "MASK", "link": 7}
+      ],
+      "outputs": [
+        {"name": "LATENT", "type": "LATENT", "links": [11]}
+      ]
+    },
+    {
+      "id": 8,
+      "type": "KSampler",
+      "pos": [900, 300],
+      "size": {"0": 315, "1": 262},
+      "inputs": [
+        {"name": "model", "type": "MODEL", "link": 1},
+        {"name": "positive", "type": "CONDITIONING", "link": 8},
+        {"name": "negative", "type": "CONDITIONING", "link": 9},
+        {"name": "latent_image", "type": "LATENT", "link": 11}
+      ],
+      "outputs": [
+        {"name": "LATENT", "type": "LATENT", "links": [12]}
+      ],
+      "widgets_values": [
+        123456789,
+        "randomize",
+        20,
+        6,
+        "euler",
+        "normal",
+        1
+      ]
+    },
+    {
+      "id": 9,
+      "type": "VAEDecode",
+      "pos": [1250, 400],
+      "size": {"0": 210, "1": 46},
+      "inputs": [
+        {"name": "samples", "type": "LATENT", "link": 12},
+        {"name": "vae", "type": "VAE", "link": 5}
+      ],
+      "outputs": [
+        {"name": "IMAGE", "type": "IMAGE", "links": [13]}
+      ]
+    },
+    {
+      "id": 10,
+      "type": "SaveImage",
+      "pos": [1500, 300],
+      "size": {"0": 315, "1": 270},
+      "inputs": [
+        {"name": "images", "type": "IMAGE", "link": 13}
+      ],
+      "widgets_values": ["tryon_result"]
+    }
+  ],
+  "links": [
+    [1, 1, 0, 8, 0, "MODEL"],
+    [2, 1, 1, 4, 0, "CLIP"],
+    [3, 1, 1, 5, 0, "CLIP"],
+    [4, 1, 2, 6, 1, "VAE"],
+    [5, 1, 2, 9, 1, "VAE"],
+    [6, 2, 0, 6, 0, "IMAGE"],
+    [7, 3, 1, 7, 1, "MASK"],
+    [8, 4, 0, 8, 1, "CONDITIONING"],
+    [9, 5, 0, 8, 2, "CONDITIONING"],
+    [10, 6, 0, 7, 0, "LATENT"],
+    [11, 7, 0, 8, 3, "LATENT"],
+    [12, 8, 0, 9, 0, "LATENT"],
+    [13, 9, 0, 10, 0, "IMAGE"]
+  ],
+  "config": {},
+  "extra": {
+    "description": "Basic Try-On Inpainting Workflow for ComfyUI",
+    "version": "1.0",
+    "settings": {
+      "resolution": "512x768",
+      "steps": 20,
+      "cfg": 6,
+      "sampler": "euler"
+    }
+  }
+}

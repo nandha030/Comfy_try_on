@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  comify:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"  # Backend API
+      - "3000:3000"  # Frontend
+      - "8188:8188"  # ComfyUI (optional)
+    volumes:
+      - ./models:/app/models
+      - ./data:/app/data
+      - ./backend/data:/app/backend/data
+    environment:
+      - CUDA_VISIBLE_DEVICES=0
+      - PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+
+  # Optional: Standalone ComfyUI service
+  comfyui:
+    image: pytorch/pytorch:2.1.0-cuda12.1-cudnn8-runtime
+    ports:
+      - "8188:8188"
+    volumes:
+      - ./ComfyUI:/app/ComfyUI
+      - ./models:/app/models
+    working_dir: /app/ComfyUI
+    command: python main.py --listen 0.0.0.0 --port 8188
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    profiles:
+      - with-comfyui
