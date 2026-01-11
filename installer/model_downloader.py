@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from concurrent.futures import ThreadPoolExecutor
 import threading
 
-# Model definitions with working HuggingFace URLs
+# Model definitions with working URLs - Uncensored models for professional use
 MODELS = {
     "face_detection": {
         "name": "InsightFace Antelopev2",
@@ -46,6 +46,107 @@ MODELS = {
         "required": True,
         "profiles": ["high", "medium", "low", "cpu_optimized"]
     },
+    # Uncensored Base Models
+    "base_realistic": {
+        "name": "Realistic Vision V6 (Uncensored)",
+        "files": [
+            {
+                "url": "https://civitai.com/api/download/models/245598?type=Model&format=SafeTensor&size=full&fp=fp16",
+                "path": "checkpoints/realisticVisionV60B1_v51VAE.safetensors",
+                "size_mb": 2000
+            }
+        ],
+        "required": True,
+        "profiles": ["high", "medium", "low", "cpu_optimized"]
+    },
+    "base_deliberate": {
+        "name": "Deliberate V6 (Uncensored)",
+        "files": [
+            {
+                "url": "https://civitai.com/api/download/models/274039?type=Model&format=SafeTensor&size=full&fp=fp16",
+                "path": "checkpoints/deliberate_v6.safetensors",
+                "size_mb": 2000
+            }
+        ],
+        "required": False,
+        "profiles": ["high", "medium"]
+    },
+    "base_epicrealism": {
+        "name": "epiCRealism (Natural Uncensored)",
+        "files": [
+            {
+                "url": "https://civitai.com/api/download/models/143906?type=Model&format=SafeTensor&size=full&fp=fp16",
+                "path": "checkpoints/epicrealism_naturalSinRC1VAE.safetensors",
+                "size_mb": 2000
+            }
+        ],
+        "required": False,
+        "profiles": ["high", "medium"]
+    },
+    "base_cyberrealistic": {
+        "name": "CyberRealistic (Uncensored)",
+        "files": [
+            {
+                "url": "https://civitai.com/api/download/models/138176?type=Model&format=SafeTensor&size=full&fp=fp16",
+                "path": "checkpoints/cyberrealistic_v42.safetensors",
+                "size_mb": 2000
+            }
+        ],
+        "required": False,
+        "profiles": ["high", "medium"]
+    },
+    # Inpainting model for try-on
+    "inpainting": {
+        "name": "SD 1.5 Inpainting",
+        "files": [
+            {
+                "url": "https://huggingface.co/runwayml/stable-diffusion-inpainting/resolve/main/sd-v1-5-inpainting.ckpt",
+                "path": "checkpoints/sd-v1-5-inpainting.ckpt",
+                "size_mb": 4000
+            }
+        ],
+        "required": True,
+        "profiles": ["high", "medium", "low", "cpu_optimized"]
+    },
+    # VAE for better quality
+    "vae": {
+        "name": "SD VAE (ft-mse)",
+        "files": [
+            {
+                "url": "https://huggingface.co/stabilityai/sd-vae-ft-mse-original/resolve/main/vae-ft-mse-840000-ema-pruned.safetensors",
+                "path": "vae/vae-ft-mse-840000-ema-pruned.safetensors",
+                "size_mb": 335
+            }
+        ],
+        "required": True,
+        "profiles": ["high", "medium", "low", "cpu_optimized"]
+    },
+    # ControlNet for pose
+    "controlnet_openpose": {
+        "name": "ControlNet OpenPose",
+        "files": [
+            {
+                "url": "https://huggingface.co/lllyasviel/ControlNet-v1-1/resolve/main/control_v11p_sd15_openpose.pth",
+                "path": "controlnet/control_v11p_sd15_openpose.pth",
+                "size_mb": 1450
+            }
+        ],
+        "required": False,
+        "profiles": ["high", "medium"]
+    },
+    "controlnet_inpaint": {
+        "name": "ControlNet Inpaint",
+        "files": [
+            {
+                "url": "https://huggingface.co/lllyasviel/ControlNet-v1-1/resolve/main/control_v11p_sd15_inpaint.pth",
+                "path": "controlnet/control_v11p_sd15_inpaint.pth",
+                "size_mb": 1450
+            }
+        ],
+        "required": False,
+        "profiles": ["high", "medium"]
+    },
+    # Enhancement models
     "face_restore": {
         "name": "CodeFormer",
         "files": [
@@ -70,6 +171,7 @@ MODELS = {
         "required": False,
         "profiles": ["high", "medium"]
     },
+    # CLIP and IP-Adapter for better garment transfer
     "clip_vision": {
         "name": "CLIP ViT-H",
         "files": [
@@ -89,6 +191,24 @@ MODELS = {
                 "url": "https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter_sd15.safetensors",
                 "path": "ip_adapter/ip-adapter_sd15.safetensors",
                 "size_mb": 44
+            },
+            {
+                "url": "https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter-plus_sd15.safetensors",
+                "path": "ip_adapter/ip-adapter-plus_sd15.safetensors",
+                "size_mb": 98
+            }
+        ],
+        "required": False,
+        "profiles": ["high", "medium"]
+    },
+    # LoRA for better body/skin
+    "lora_detail": {
+        "name": "Detail Tweaker LoRA",
+        "files": [
+            {
+                "url": "https://civitai.com/api/download/models/62833?type=Model&format=SafeTensor",
+                "path": "loras/add_detail.safetensors",
+                "size_mb": 144
             }
         ],
         "required": False,
@@ -100,9 +220,15 @@ MODELS = {
 CATEGORIES = {
     "insightface": ["face_detection"],
     "dwpose": ["body_pose"],
-    "enhancement": ["face_restore", "upscaler"],
-    "clip": ["clip_vision", "ip_adapter"],
     "essential": ["face_detection", "body_pose"],
+    "base_models": ["base_realistic", "inpainting", "vae"],
+    "uncensored": ["base_realistic", "base_deliberate", "base_epicrealism", "base_cyberrealistic"],
+    "controlnet": ["controlnet_openpose", "controlnet_inpaint"],
+    "enhancement": ["face_restore", "upscaler"],
+    "ip_adapter": ["clip_vision", "ip_adapter"],
+    "loras": ["lora_detail"],
+    "full": ["face_detection", "body_pose", "base_realistic", "inpainting", "vae",
+             "controlnet_openpose", "face_restore", "upscaler", "clip_vision", "ip_adapter"],
     "all": list(MODELS.keys())
 }
 
@@ -194,14 +320,14 @@ class ModelDownloader:
         try:
             # Start download with headers to handle some servers
             headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
             }
             response = requests.get(url, stream=True, timeout=60, headers=headers, allow_redirects=True)
             response.raise_for_status()
 
             total_size = int(response.headers.get('content-length', 0))
             downloaded = 0
-            chunk_size = 8192
+            chunk_size = 1024 * 1024  # 1MB chunks for faster downloads
             start_time = __import__('time').time()
 
             # Create temp file
@@ -246,6 +372,11 @@ class ModelDownloader:
 
         except Exception as e:
             print(f"\nError downloading {url}: {e}")
+            # Clean up temp file if exists
+            temp_path = dest_path.with_suffix('.tmp')
+            if temp_path.exists():
+                temp_path.unlink()
+
             progress = DownloadProgress(
                 model_name=model_name,
                 file_name=dest_path.name,
@@ -308,8 +439,7 @@ class ModelDownloader:
                 try:
                     with zipfile.ZipFile(file_path, 'r') as zip_ref:
                         zip_ref.extractall(extract_dir)
-                    # Optionally remove zip after extraction
-                    # file_path.unlink()
+                    print(f"  Extraction complete!")
                 except Exception as e:
                     print(f"  Extraction error: {e}")
                     success = False
@@ -325,6 +455,9 @@ class ModelDownloader:
 
         model_ids = CATEGORIES[category]
         print(f"\nDownloading category '{category}': {len(model_ids)} models")
+
+        total_size = self.get_total_download_size(model_ids)
+        print(f"Estimated download size: ~{total_size} MB")
 
         success = True
         for model_id in model_ids:
@@ -355,6 +488,8 @@ class ModelDownloader:
             models_to_download.extend(self.get_optional_models())
 
         print(f"\nDownloading {len(models_to_download)} models...")
+        total_size = self.get_total_download_size(models_to_download)
+        print(f"Estimated total size: ~{total_size} MB")
 
         success = True
         for model_id in models_to_download:
@@ -366,6 +501,23 @@ class ModelDownloader:
     def download_essential(self) -> bool:
         """Download just the essential models (face + body detection)"""
         return self.download_category("essential")
+
+    def download_for_tryon(self) -> bool:
+        """Download all models needed for virtual try-on"""
+        print("\n" + "="*60)
+        print("Downloading models for Virtual Try-On")
+        print("="*60)
+
+        categories = ["essential", "base_models"]
+        success = True
+        for cat in categories:
+            if not self.download_category(cat):
+                success = False
+
+        print("\n" + "="*60)
+        print("Download complete! You can now use the try-on feature.")
+        print("="*60)
+        return success
 
     def get_status(self) -> Dict:
         """Get status of all models"""
@@ -385,11 +537,13 @@ def print_download_progress(progress: DownloadProgress):
     if progress.status == "downloading":
         percent = (progress.downloaded / progress.total_size * 100) if progress.total_size > 0 else 0
         speed_mb = progress.speed / (1024 * 1024)
-        print(f"\r  [{progress.file_name}] {percent:.1f}% ({speed_mb:.1f} MB/s)", end="", flush=True)
+        downloaded_mb = progress.downloaded / (1024 * 1024)
+        total_mb = progress.total_size / (1024 * 1024)
+        print(f"\r  [{progress.file_name}] {downloaded_mb:.0f}/{total_mb:.0f} MB ({percent:.1f}%) - {speed_mb:.1f} MB/s", end="", flush=True)
     elif progress.status == "completed":
-        print(f"\r  [{progress.file_name}] Complete!                    ")
+        print(f"\r  [{progress.file_name}] Complete!                                        ")
     elif progress.status == "failed":
-        print(f"\r  [{progress.file_name}] FAILED                       ")
+        print(f"\r  [{progress.file_name}] FAILED                                           ")
 
 
 if __name__ == "__main__":
@@ -398,7 +552,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Download Comify AI models")
     parser.add_argument("--profile", default="medium", choices=["high", "medium", "low", "cpu_optimized"])
     parser.add_argument("--include-optional", action="store_true")
-    parser.add_argument("--category", help="Download specific category: insightface, dwpose, enhancement, essential, all")
+    parser.add_argument("--category", help="Download category: essential, base_models, uncensored, controlnet, enhancement, full, all")
+    parser.add_argument("--tryon", action="store_true", help="Download all models needed for try-on")
     parser.add_argument("--list", action="store_true", help="List models without downloading")
     args = parser.parse_args()
 
@@ -414,8 +569,10 @@ if __name__ == "__main__":
             downloaded = "YES" if info["downloaded"] else "NO"
             required = "Required" if info["required"] else "Optional"
             profiles = ", ".join(info["profiles"])
-            print(f"  {info['name']}: {downloaded} ({required}) [{profiles}]")
+            print(f"  {info['name']}: {downloaded} ({required})")
         print("\nCategories:", list(CATEGORIES.keys()))
+    elif args.tryon:
+        downloader.download_for_tryon()
     elif args.category:
         print(f"\nDownloading category: {args.category}")
         print("=" * 60)
