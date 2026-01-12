@@ -216,6 +216,7 @@ export async function processGarment(
 
 /**
  * Generate advanced try-on with V2 API
+ * This function submits the job and polls for the result
  */
 export async function generateAdvancedTryon(
   personImage: File,
@@ -236,7 +237,7 @@ export async function generateAdvancedTryon(
       formData.append('mask_image', options.maskImage);
     }
     if (options.profileId) {
-      formData.append('profile_id', options.profileId);
+      formData.append('model_profile_id', options.profileId);
     }
 
     // Add optional parameters
@@ -268,6 +269,7 @@ export async function generateAdvancedTryon(
       formData.append('negative_prompt', options.negative_prompt);
     }
 
+    // Submit the job
     const response = await fetch(`${API_V2_BASE}/tryon/advanced`, {
       method: 'POST',
       body: formData,
@@ -282,6 +284,12 @@ export async function generateAdvancedTryon(
       };
     }
 
+    // If we got a job_id, poll for the result
+    if (data.job_id) {
+      return await pollV2Result(data.job_id);
+    }
+
+    // Direct result (shouldn't happen but handle it)
     return {
       success: true,
       result_url: data.result_url,
@@ -295,6 +303,48 @@ export async function generateAdvancedTryon(
       error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
+}
+
+/**
+ * Poll for V2 try-on result
+ */
+async function pollV2Result(jobId: string, maxAttempts: number = 120): Promise<TryOnResult> {
+  for (let i = 0; i < maxAttempts; i++) {
+    try {
+      const response = await fetch(`${API_V2_BASE}/tryon/${jobId}`);
+      if (!response.ok) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        continue;
+      }
+
+      const data = await response.json();
+
+      if (data.status === 'completed') {
+        return {
+          success: true,
+          result_url: data.result_url,
+          result_id: data.result_id,
+          seed: data.seed,
+          generation_time: data.generation_time,
+        };
+      } else if (data.status === 'failed') {
+        return {
+          success: false,
+          error: data.error || 'Generation failed',
+        };
+      }
+
+      // Still processing, wait and try again
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    } catch {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+  }
+
+  return {
+    success: false,
+    error: 'Generation timed out',
+  };
 }
 
 /**
