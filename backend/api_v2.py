@@ -157,6 +157,23 @@ def load_image(path: Path) -> np.ndarray:
     return cv2.imread(str(path))
 
 
+def numpy_to_python(obj):
+    """Convert numpy types to native Python types for JSON serialization"""
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, (np.int8, np.int16, np.int32, np.int64)):
+        return int(obj)
+    elif isinstance(obj, (np.float16, np.float32, np.float64)):
+        return float(obj)
+    elif isinstance(obj, np.bool_):
+        return bool(obj)
+    elif isinstance(obj, dict):
+        return {k: numpy_to_python(v) for k, v in obj.items()}
+    elif isinstance(obj, (list, tuple)):
+        return [numpy_to_python(item) for item in obj]
+    return obj
+
+
 def save_image(image: np.ndarray, prefix: str) -> Path:
     """Save image and return path"""
     filename = f"{prefix}_{generate_id()}.png"
@@ -224,7 +241,7 @@ async def detect_system_hardware():
     }
 
 
-@router.post("/profiles", response_model=ModelProfileResponse)
+@router.post("/profiles")
 async def create_model_profile(
     name: str = Form(...),
     notes: Optional[str] = Form(None),
@@ -244,36 +261,37 @@ async def create_model_profile(
     profile.reference_images.append(str(image_path))
     pipe.save_profile(profile)
 
-    return ModelProfileResponse(
-        id=profile.id,
-        name=profile.name,
-        skin_colors={k: list(v) for k, v in profile.skin_colors.items()},
-        body_shape=profile.body_shape,
-        created_at=profile.created_at,
-        has_face_embedding=profile.face_embedding is not None
-    )
+    result = {
+        "id": profile.id,
+        "name": profile.name,
+        "skin_colors": numpy_to_python({k: v for k, v in profile.skin_colors.items()}) if profile.skin_colors else {},
+        "body_shape": profile.body_shape,
+        "created_at": profile.created_at,
+        "has_face_embedding": profile.face_embedding is not None
+    }
+    return JSONResponse(content=result)
 
 
-@router.get("/profiles", response_model=List[ModelProfileResponse])
+@router.get("/profiles")
 async def list_model_profiles():
     """List all model profiles"""
     pipe = get_pipeline()
 
     profiles = []
     for profile in pipe.profiles.values():
-        profiles.append(ModelProfileResponse(
-            id=profile.id,
-            name=profile.name,
-            skin_colors={k: list(v) for k, v in profile.skin_colors.items()},
-            body_shape=profile.body_shape,
-            created_at=profile.created_at,
-            has_face_embedding=profile.face_embedding is not None
-        ))
+        profiles.append({
+            "id": profile.id,
+            "name": profile.name,
+            "skin_colors": numpy_to_python({k: v for k, v in profile.skin_colors.items()}) if profile.skin_colors else {},
+            "body_shape": profile.body_shape,
+            "created_at": profile.created_at,
+            "has_face_embedding": profile.face_embedding is not None
+        })
 
-    return profiles
+    return JSONResponse(content=profiles)
 
 
-@router.get("/profiles/{profile_id}", response_model=ModelProfileResponse)
+@router.get("/profiles/{profile_id}")
 async def get_model_profile(profile_id: str):
     """Get a specific model profile"""
     pipe = get_pipeline()
@@ -283,14 +301,15 @@ async def get_model_profile(profile_id: str):
 
     profile = pipe.profiles[profile_id]
 
-    return ModelProfileResponse(
-        id=profile.id,
-        name=profile.name,
-        skin_colors={k: list(v) for k, v in profile.skin_colors.items()},
-        body_shape=profile.body_shape,
-        created_at=profile.created_at,
-        has_face_embedding=profile.face_embedding is not None
-    )
+    result = {
+        "id": profile.id,
+        "name": profile.name,
+        "skin_colors": numpy_to_python({k: v for k, v in profile.skin_colors.items()}) if profile.skin_colors else {},
+        "body_shape": profile.body_shape,
+        "created_at": profile.created_at,
+        "has_face_embedding": profile.face_embedding is not None
+    }
+    return JSONResponse(content=result)
 
 
 @router.delete("/profiles/{profile_id}")
@@ -501,32 +520,38 @@ async def extract_features(
     body_data = pipe.body_processor.extract_body_data(img)
 
     result = {
+        "face_detected": False,
+        "body_detected": False,
         "face": None,
         "body": None
     }
 
     if face_data:
-        result["face"] = {
+        result["face_detected"] = True
+        result["face"] = numpy_to_python({
             "detected": True,
-            "bbox": list(face_data.bbox),
-            "angle": face_data.angle,
-            "skin_color": list(face_data.skin_color),
-            "has_embedding": face_data.embedding is not None
-        }
+            "bbox": face_data.bbox if hasattr(face_data, 'bbox') else None,
+            "angle": face_data.angle if hasattr(face_data, 'angle') else None,
+            "skin_color": face_data.skin_color if hasattr(face_data, 'skin_color') else None,
+            "has_embedding": face_data.embedding is not None if hasattr(face_data, 'embedding') else False
+        })
 
     if body_data:
-        result["body"] = {
+        result["body_detected"] = True
+        body_info = {
             "detected": True,
-            "pose_type": body_data.pose_type,
-            "body_shape": body_data.body_shape,
-            "skin_colors": {k: list(v) for k, v in body_data.skin_colors.items()},
-            "keypoints_count": len(body_data.keypoints) if body_data.keypoints is not None else 0
+            "pose_type": body_data.pose_type if hasattr(body_data, 'pose_type') else None,
+            "body_shape": body_data.body_shape if hasattr(body_data, 'body_shape') else None,
+            "keypoints_count": len(body_data.keypoints) if hasattr(body_data, 'keypoints') and body_data.keypoints is not None else 0
         }
+        if hasattr(body_data, 'skin_colors') and body_data.skin_colors:
+            body_info["skin_colors"] = {k: numpy_to_python(v) for k, v in body_data.skin_colors.items()}
+        result["body"] = numpy_to_python(body_info)
 
     # Clean up
     image_path.unlink()
 
-    return result
+    return JSONResponse(content=result)
 
 
 @router.post("/process-garment")
