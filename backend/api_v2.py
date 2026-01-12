@@ -25,6 +25,11 @@ import numpy as np
 import cv2
 
 # Import AI engine components
+TryOnPipeline = None
+TryOnRequest = None
+HardwareProfile = None
+AI_ENGINE_AVAILABLE = False
+
 try:
     from ai_engine.pipeline import TryOnPipeline, TryOnRequest, create_pipeline
     from ai_engine.config import AIConfig, load_config, create_config_from_hardware
@@ -48,8 +53,8 @@ for dir_path in [DATA_DIR, UPLOADS_DIR, RESULTS_DIR, PROFILES_DIR]:
 router = APIRouter(prefix="/api/v2", tags=["v2"])
 
 # ============== Global State ==============
-pipeline: Optional[TryOnPipeline] = None
-hardware_profile: Optional[HardwareProfile] = None
+pipeline = None  # Will be TryOnPipeline when AI engine is available
+hardware_profile = None  # Will be HardwareProfile when AI engine is available
 active_jobs: Dict[str, Dict] = {}
 
 
