@@ -1,0 +1,230 @@
+{
+  "last_node_id": 12,
+  "last_link_id": 14,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "PipelineLoader",
+      "pos": [600, 50],
+      "size": {"0": 315, "1": 58},
+      "outputs": [
+        {"name": "PIPELINE", "type": "PIPELINE", "links": [1], "slot_index": 0}
+      ],
+      "title": "Load IDM-VTON Pipeline",
+      "widgets_values": ["float16"]
+    },
+    {
+      "id": 2,
+      "type": "LoadImage",
+      "pos": [50, 50],
+      "size": {"0": 315, "1": 314},
+      "outputs": [
+        {"name": "IMAGE", "type": "IMAGE", "links": [2, 3, 4], "slot_index": 0},
+        {"name": "MASK", "type": "MASK", "links": null}
+      ],
+      "title": "Load Human Image",
+      "widgets_values": ["person.png", "image"]
+    },
+    {
+      "id": 3,
+      "type": "LoadImage",
+      "pos": [50, 450],
+      "size": {"0": 315, "1": 314},
+      "outputs": [
+        {"name": "IMAGE", "type": "IMAGE", "links": [5], "slot_index": 0},
+        {"name": "MASK", "type": "MASK", "links": null}
+      ],
+      "title": "Load Garment Image",
+      "widgets_values": ["garment.png", "image"]
+    },
+    {
+      "id": 4,
+      "type": "DensePosePreprocessor",
+      "pos": [400, 200],
+      "size": {"0": 315, "1": 82},
+      "inputs": [
+        {"name": "image", "type": "IMAGE", "link": 3}
+      ],
+      "outputs": [
+        {"name": "IMAGE", "type": "IMAGE", "links": [6], "slot_index": 0}
+      ],
+      "title": "DensePose Estimation",
+      "widgets_values": ["densepose_r50_fpn_dl.torchscript", 512]
+    },
+    {
+      "id": 5,
+      "type": "SAMModelLoader",
+      "pos": [400, 350],
+      "size": {"0": 315, "1": 58},
+      "outputs": [
+        {"name": "SAM_MODEL", "type": "SAM_MODEL", "links": [7], "slot_index": 0}
+      ],
+      "title": "Load SAM Model",
+      "widgets_values": ["sam_vit_h_4b8939.pth"]
+    },
+    {
+      "id": 6,
+      "type": "GroundingDinoModelLoader (segment anything)",
+      "pos": [400, 450],
+      "size": {"0": 315, "1": 58},
+      "outputs": [
+        {"name": "GROUNDING_DINO_MODEL", "type": "GROUNDING_DINO_MODEL", "links": [8], "slot_index": 0}
+      ],
+      "title": "Load GroundingDINO",
+      "widgets_values": ["GroundingDINO_SwinT_OGC (694MB)"]
+    },
+    {
+      "id": 7,
+      "type": "GroundingDinoSAMSegment (segment anything)",
+      "pos": [400, 550],
+      "size": {"0": 315, "1": 122},
+      "inputs": [
+        {"name": "sam_model", "type": "SAM_MODEL", "link": 7},
+        {"name": "grounding_dino_model", "type": "GROUNDING_DINO_MODEL", "link": 8},
+        {"name": "image", "type": "IMAGE", "link": 4}
+      ],
+      "outputs": [
+        {"name": "IMAGE", "type": "IMAGE", "links": null},
+        {"name": "MASK", "type": "MASK", "links": [9], "slot_index": 1}
+      ],
+      "title": "Auto Segment Body",
+      "widgets_values": ["upper body clothes", 0.3]
+    },
+    {
+      "id": 8,
+      "type": "InvertMask",
+      "pos": [750, 550],
+      "size": {"0": 210, "1": 26},
+      "inputs": [
+        {"name": "mask", "type": "MASK", "link": 9}
+      ],
+      "outputs": [
+        {"name": "MASK", "type": "MASK", "links": [10], "slot_index": 0}
+      ],
+      "title": "Invert Mask"
+    },
+    {
+      "id": 9,
+      "type": "MaskToImage",
+      "pos": [750, 620],
+      "size": {"0": 210, "1": 26},
+      "inputs": [
+        {"name": "mask", "type": "MASK", "link": 10}
+      ],
+      "outputs": [
+        {"name": "IMAGE", "type": "IMAGE", "links": [11], "slot_index": 0}
+      ],
+      "title": "Mask to Image"
+    },
+    {
+      "id": 10,
+      "type": "IDM-VTON",
+      "pos": [1000, 200],
+      "size": {"0": 400, "1": 350},
+      "inputs": [
+        {"name": "pipeline", "type": "PIPELINE", "link": 1},
+        {"name": "human_img", "type": "IMAGE", "link": 2},
+        {"name": "pose_img", "type": "IMAGE", "link": 6},
+        {"name": "mask_img", "type": "IMAGE", "link": 11},
+        {"name": "garment_img", "type": "IMAGE", "link": 5}
+      ],
+      "outputs": [
+        {"name": "IMAGE", "type": "IMAGE", "links": [12, 13], "slot_index": 0},
+        {"name": "MASK", "type": "MASK", "links": null}
+      ],
+      "title": "Run IDM-VTON Inference",
+      "widgets_values": [
+        "a colorful patterned shirt, high quality fabric",
+        "blurry, low quality, distorted, deformed, ugly, bad anatomy",
+        768,
+        1024,
+        30,
+        2.0,
+        1.0,
+        42
+      ]
+    },
+    {
+      "id": 11,
+      "type": "PreviewImage",
+      "pos": [1450, 50],
+      "size": {"0": 315, "1": 314},
+      "inputs": [
+        {"name": "images", "type": "IMAGE", "link": 12}
+      ],
+      "title": "Preview Result"
+    },
+    {
+      "id": 12,
+      "type": "SaveImage",
+      "pos": [1450, 400],
+      "size": {"0": 315, "1": 270},
+      "inputs": [
+        {"name": "images", "type": "IMAGE", "link": 13}
+      ],
+      "title": "Save Result",
+      "widgets_values": ["idm_vton_result"]
+    }
+  ],
+  "links": [
+    [1, 1, 0, 10, 0, "PIPELINE"],
+    [2, 2, 0, 10, 1, "IMAGE"],
+    [3, 2, 0, 4, 0, "IMAGE"],
+    [4, 2, 0, 7, 2, "IMAGE"],
+    [5, 3, 0, 10, 4, "IMAGE"],
+    [6, 4, 0, 10, 2, "IMAGE"],
+    [7, 5, 0, 7, 0, "SAM_MODEL"],
+    [8, 6, 0, 7, 1, "GROUNDING_DINO_MODEL"],
+    [9, 7, 1, 8, 0, "MASK"],
+    [10, 8, 0, 9, 0, "MASK"],
+    [11, 9, 0, 10, 3, "IMAGE"],
+    [12, 10, 0, 11, 0, "IMAGE"],
+    [13, 10, 0, 12, 0, "IMAGE"]
+  ],
+  "groups": [
+    {
+      "title": "Input Images",
+      "bounding": [30, 30, 355, 780],
+      "color": "#3f789e"
+    },
+    {
+      "title": "Pose & Mask Generation",
+      "bounding": [380, 180, 355, 520],
+      "color": "#8A8"
+    },
+    {
+      "title": "IDM-VTON Processing",
+      "bounding": [980, 30, 440, 550],
+      "color": "#88A"
+    },
+    {
+      "title": "Output",
+      "bounding": [1430, 30, 355, 680],
+      "color": "#A88"
+    }
+  ],
+  "config": {},
+  "extra": {
+    "description": "IDM-VTON Virtual Try-On Workflow - High quality garment transfer with pose preservation",
+    "version": "1.0",
+    "author": "Comify",
+    "requirements": [
+      "ComfyUI-IDM-VTON",
+      "comfyui_controlnet_aux",
+      "comfyui_segment_anything"
+    ],
+    "settings": {
+      "resolution": "768x1024",
+      "steps": 30,
+      "guidance_scale": 2.0,
+      "weight_dtype": "float16",
+      "min_vram": "16GB"
+    },
+    "usage": {
+      "human_img": "Full body photo of the person (768x1024 recommended)",
+      "garment_img": "Flat lay or mannequin photo of the garment",
+      "garment_description": "Describe the garment (e.g., 'blue denim jacket, cotton fabric')",
+      "negative_prompt": "What to avoid in the output"
+    }
+  }
+}
