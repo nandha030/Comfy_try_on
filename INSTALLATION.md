@@ -8,52 +8,179 @@ Comify is a professional virtual try-on system for fashion boutiques that runs e
 - **Body/Skin Tone Matching**: Matches skin tones and body proportions
 - **Uncensored Models**: Supports all garment types (lingerie, swimwear, etc.)
 - **Hardware Auto-Detection**: Automatically configures for your GPU/CPU
+- **Cross-Platform Support**: Works on Windows, macOS (Intel & Apple Silicon), and Linux
 
 ---
 
 ## System Requirements
 
 ### Minimum Requirements
+- **Python**: 3.9 or higher
 - **CPU**: 4+ cores
 - **RAM**: 16GB
 - **Storage**: 50GB free space
 - **GPU**: Optional but recommended
 
-### Recommended for GPU Acceleration
-| GPU Type | VRAM | Performance |
-|----------|------|-------------|
-| RTX 3090 | 24GB | Excellent |
-| RTX 4090 | 24GB | Best |
-| RTX 4080 | 16GB | Very Good |
-| RTX 3080 | 10GB | Good |
-| Apple M1/M2/M3 | 8-32GB | Good (MPS) |
+### Platform Support
+
+| Platform | GPU Support | Notes |
+|----------|-------------|-------|
+| Windows 10/11 | NVIDIA CUDA, AMD DirectML | Best NVIDIA support |
+| macOS (Apple Silicon) | MPS (M1/M2/M3/M4) | Native ARM support |
+| macOS (Intel) | CPU only | Limited performance |
+| Linux (Ubuntu 20.04+) | NVIDIA CUDA, AMD ROCm | Server deployments |
+
+### Recommended GPU Configurations
+| GPU Type | VRAM | Performance | Platform |
+|----------|------|-------------|----------|
+| RTX 4090 | 24GB | Best | Windows/Linux |
+| RTX 3090 | 24GB | Excellent | Windows/Linux |
+| RTX 4080 | 16GB | Very Good | Windows/Linux |
+| RTX 3080 | 10GB | Good | Windows/Linux |
+| Apple M3 Max | 32GB+ | Excellent | macOS |
+| Apple M2 Pro/Max | 16-32GB | Very Good | macOS |
+| Apple M1/M2/M3 | 8-16GB | Good | macOS |
+| AMD RX 7900 | 24GB | Good | Windows (DirectML) |
 
 ---
 
-## Quick Start (Local Development)
+## Cross-Platform Installation
 
-### 1. Clone Repository
+### Quick Install (Automatic)
+
 ```bash
-git clone https://github.com/nandha030/comify.git
-cd comify
+# Clone the repository
+git clone https://github.com/nandha030/Comfy_try_on.git
+cd Comfy_try_on
+
+# Run cross-platform setup (auto-detects your system)
+python setup.py
 ```
 
-### 2. Run Installer
+The setup script will:
+- Detect your platform (Windows/macOS/Linux)
+- Detect your GPU type (NVIDIA/AMD/Apple Silicon/CPU)
+- Install PyTorch with correct backend
+- Install all dependencies
+- Configure the system
+
+---
+
+## Platform-Specific Installation
+
+### Windows Installation
+
+```powershell
+# 1. Create virtual environment
+python -m venv venv
+venv\Scripts\activate
+
+# 2. Install PyTorch (choose one):
+
+# For NVIDIA GPU (CUDA):
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+
+# For AMD GPU (DirectML):
+pip install torch torchvision
+pip install torch-directml
+
+# For CPU only:
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+
+# 3. Install requirements
+pip install -r requirements-base.txt
+pip install -r requirements-windows.txt
+```
+
+### macOS Installation (Apple Silicon)
+
 ```bash
+# 1. Create virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# 2. Install PyTorch (MPS support included automatically)
+pip install torch torchvision torchaudio
+
+# 3. Install requirements
+pip install -r requirements-base.txt
+pip install -r requirements-mac.txt
+```
+
+### macOS Installation (Intel)
+
+```bash
+# 1. Create virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# 2. Install PyTorch (CPU only for Intel Mac)
+pip install torch torchvision torchaudio
+
+# 3. Install requirements
+pip install -r requirements-base.txt
+pip install -r requirements-mac.txt
+```
+
+### Linux Installation (Ubuntu/Debian)
+
+```bash
+# 0. Install system dependencies
+sudo apt-get update
+sudo apt-get install python3-pip python3-venv libgl1-mesa-glx libglib2.0-0
+
+# 1. Create virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# 2. Install PyTorch (choose one):
+
+# For NVIDIA GPU (CUDA):
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+
+# For AMD GPU (ROCm):
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm5.6
+
+# For CPU only:
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+
+# 3. Install requirements
+pip install -r requirements-base.txt
+pip install -r requirements-linux.txt
+```
+
+---
+
+## Requirements Files
+
+| File | Description |
+|------|-------------|
+| `requirements.txt` | Main file with all dependencies |
+| `requirements-base.txt` | Platform-agnostic dependencies |
+| `requirements-windows.txt` | Windows-specific (NVIDIA/AMD/CPU) |
+| `requirements-mac.txt` | macOS-specific (Apple Silicon/Intel) |
+| `requirements-linux.txt` | Linux-specific (NVIDIA/ROCm/CPU) |
+
+---
+
+## Download AI Models
+
+After installation, download the AI models:
+
+```bash
+# Run the installer to download models
 python install.py
 ```
 
-The installer will:
-- Detect your hardware (GPU/CPU)
-- Create a Python virtual environment
-- Install dependencies
-- Download required AI models
-- Set up the database
+---
 
-### 3. Start Application
+## Start Application
+
 ```bash
+# Linux/macOS:
 ./start.sh
-# or on Windows:
+
+# Windows:
 start.bat
 ```
 

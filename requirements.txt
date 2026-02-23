@@ -1,37 +1,61 @@
+# Comify Virtual Try-On - Main Requirements
+# ==========================================
+#
+# For cross-platform installation, use platform-specific files:
+#   - requirements-base.txt    (common dependencies)
+#   - requirements-windows.txt (Windows with NVIDIA/AMD/CPU)
+#   - requirements-mac.txt     (macOS with Apple Silicon/Intel)
+#   - requirements-linux.txt   (Linux with NVIDIA/AMD/CPU)
+#
+# Quick Install (all platforms):
+#   1. Install PyTorch first (see platform-specific instructions below)
+#   2. pip install -r requirements-base.txt
+#   3. pip install -r requirements-{your-platform}.txt
+#
+# ==========================================
+
 # Core dependencies
-fastapi>=0.104.0
-uvicorn[standard]>=0.24.0
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
 python-multipart>=0.0.6
 aiofiles>=23.2.0
 httpx>=0.25.0
 websockets>=12.0
 pydantic>=2.5.0
+aiohttp>=3.9.0
 
 # Image processing
 opencv-python-headless>=4.8.0
 Pillow>=10.0.0
 numpy>=1.24.0
 
-# AI/ML Core
-torch>=2.1.0
-torchvision>=0.16.0
-torchaudio>=2.1.0
+# AI/ML Core (PyTorch should be installed separately with correct index URL)
+# torch>=2.1.0
+# torchvision>=0.16.0
+# torchaudio>=2.1.0
 
 # Diffusion models
-diffusers>=0.24.0
-transformers>=4.35.0
-accelerate>=0.24.0
+diffusers>=0.25.0
+transformers>=4.36.0
+accelerate>=0.25.0
 safetensors>=0.4.0
 
 # Face processing
 insightface>=0.7.3
-onnxruntime-gpu>=1.16.0
+# onnxruntime - use platform-specific version:
+# - Windows NVIDIA: onnxruntime-gpu
+# - Windows AMD: onnxruntime-directml
+# - macOS: onnxruntime
+# - Linux NVIDIA: onnxruntime-gpu
+# - Linux CPU: onnxruntime
+onnxruntime>=1.16.0
 
 # Body processing
 controlnet-aux>=0.0.7
 
 # Segmentation
 segment-anything>=1.0
+rembg>=2.0.50
 
 # Image enhancement
 realesrgan>=0.3.0
@@ -46,5 +70,5 @@ requests>=2.31.0
 huggingface-hub>=0.19.0
 python-dotenv>=1.0.0
 
-# RunPod specific
+# RunPod specific (for cloud deployment)
 runpod>=1.3.0

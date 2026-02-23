@@ -1,0 +1,47 @@
+# Comify Virtual Try-On - Windows Requirements
+# Supports: Windows 10/11 with NVIDIA GPU, AMD GPU, or CPU
+#
+# Installation:
+#   1. Create virtual environment: python -m venv venv
+#   2. Activate: venv\Scripts\activate
+#   3. Install base requirements: pip install -r requirements-base.txt
+#   4. Install Windows requirements: pip install -r requirements-windows.txt
+#
+# For NVIDIA GPU (CUDA), first run:
+#   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+#
+# For AMD GPU (DirectML), first run:
+#   pip install torch torchvision
+#   pip install torch-directml
+#
+# For CPU only, first run:
+#   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+
+# ============== OpenCV (with GUI support for Windows) ==============
+opencv-python>=4.8.0
+
+# ============== ONNX Runtime ==============
+# Choose ONE based on your hardware:
+
+# For NVIDIA GPU (recommended if you have NVIDIA):
+onnxruntime-gpu>=1.16.0
+
+# Uncomment for AMD/Intel GPU (DirectML):
+# onnxruntime-directml>=1.16.0
+
+# Uncomment for CPU only:
+# onnxruntime>=1.16.0
+
+# ============== Face Processing ==============
+insightface>=0.7.3
+
+# ============== ControlNet ==============
+controlnet-aux>=0.0.7
+
+# ============== Image Enhancement ==============
+realesrgan>=0.3.0
+basicsr>=1.4.2
+
+# ============== Windows-specific AMD GPU support ==============
+# Uncomment if using AMD GPU:
+# torch-directml>=0.2.0

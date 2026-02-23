@@ -1,0 +1,40 @@
+# Comify Virtual Try-On - macOS Requirements
+# Supports: macOS 12+ on Apple Silicon (M1/M2/M3) and Intel Macs
+#
+# Installation:
+#   1. Create virtual environment: python3 -m venv venv
+#   2. Activate: source venv/bin/activate
+#   3. Install base requirements: pip install -r requirements-base.txt
+#   4. Install macOS requirements: pip install -r requirements-mac.txt
+#
+# PyTorch installation (required before this file):
+#   # For Apple Silicon (M1/M2/M3) - MPS acceleration:
+#   pip install torch torchvision torchaudio
+#
+#   # For Intel Mac (CPU only):
+#   pip install torch torchvision torchaudio
+
+# ============== OpenCV (headless for better compatibility) ==============
+opencv-python-headless>=4.8.0
+
+# ============== ONNX Runtime ==============
+# macOS uses CPU-based ONNX runtime (MPS not supported by ONNX)
+onnxruntime>=1.16.0
+
+# ============== Face Processing ==============
+# Note: insightface may require additional setup on macOS
+# For Apple Silicon, you may need to install from source or use Rosetta
+insightface>=0.7.3
+
+# ============== ControlNet ==============
+controlnet-aux>=0.0.7
+
+# ============== Image Enhancement ==============
+# Note: realesrgan works but may be slower on Apple Silicon
+realesrgan>=0.3.0
+basicsr>=1.4.2
+
+# ============== macOS-specific dependencies ==============
+# These help with Apple Silicon compatibility
+pyobjc-core>=9.0; sys_platform == "darwin"
+pyobjc-framework-Cocoa>=9.0; sys_platform == "darwin"

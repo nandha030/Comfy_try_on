@@ -1,0 +1,49 @@
+# Comify Virtual Try-On - Linux Requirements
+# Supports: Ubuntu 20.04+, Debian 11+, CentOS 8+, and other major distros
+# Tested with NVIDIA GPUs (CUDA) and CPU
+#
+# Prerequisites (Ubuntu/Debian):
+#   sudo apt-get update
+#   sudo apt-get install python3-pip python3-venv libgl1-mesa-glx libglib2.0-0
+#
+# Installation:
+#   1. Create virtual environment: python3 -m venv venv
+#   2. Activate: source venv/bin/activate
+#   3. Install base requirements: pip install -r requirements-base.txt
+#   4. Install Linux requirements: pip install -r requirements-linux.txt
+#
+# For NVIDIA GPU (CUDA), first run:
+#   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+#
+# For CPU only, first run:
+#   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+#
+# For AMD GPU (ROCm), first run:
+#   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm5.6
+
+# ============== OpenCV (headless for servers) ==============
+opencv-python-headless>=4.8.0
+
+# ============== ONNX Runtime ==============
+# Choose ONE based on your hardware:
+
+# For NVIDIA GPU (recommended if you have NVIDIA with CUDA):
+onnxruntime-gpu>=1.16.0
+
+# Uncomment for CPU only:
+# onnxruntime>=1.16.0
+
+# ============== Face Processing ==============
+insightface>=0.7.3
+
+# ============== ControlNet ==============
+controlnet-aux>=0.0.7
+
+# ============== Image Enhancement ==============
+realesrgan>=0.3.0
+basicsr>=1.4.2
+
+# ============== Linux-specific system dependencies ==============
+# Note: You may need to install these system packages:
+# Ubuntu/Debian: sudo apt-get install libgl1-mesa-glx libglib2.0-0 libsm6 libxrender1 libxext6
+# CentOS/RHEL: sudo yum install mesa-libGL glib2
