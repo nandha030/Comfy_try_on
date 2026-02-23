@@ -1,0 +1,83 @@
+{
+  "description": "Required ComfyUI custom nodes for Comify Virtual Try-On",
+  "nodes": [
+    {
+      "name": "ComfyUI-Manager",
+      "url": "https://github.com/ltdrdata/ComfyUI-Manager.git",
+      "description": "Essential node manager for ComfyUI",
+      "required": true
+    },
+    {
+      "name": "ComfyUI-IDM-VTON",
+      "url": "https://github.com/TemryL/ComfyUI-IDM-VTON.git",
+      "description": "IDM-VTON virtual try-on node",
+      "required": true
+    },
+    {
+      "name": "ComfyUI_CatVTON_Wrapper",
+      "url": "https://github.com/chflame163/ComfyUI_CatVTON_Wrapper.git",
+      "description": "CatVTON virtual try-on wrapper",
+      "required": true
+    },
+    {
+      "name": "comfyui_controlnet_aux",
+      "url": "https://github.com/Fannovel16/comfyui_controlnet_aux.git",
+      "description": "ControlNet auxiliary preprocessors (DWPose, etc.)",
+      "required": true
+    },
+    {
+      "name": "comfyui_segment_anything",
+      "url": "https://github.com/storyicon/comfyui_segment_anything.git",
+      "description": "Segment Anything for masking",
+      "required": true
+    },
+    {
+      "name": "comfyui-reactor-node",
+      "url": "https://github.com/Gourieff/comfyui-reactor-node.git",
+      "description": "Face swap and restoration",
+      "required": false
+    },
+    {
+      "name": "ComfyUI-BiRefNet",
+      "url": "https://github.com/viperyl/ComfyUI-BiRefNet.git",
+      "description": "Background removal",
+      "required": false
+    },
+    {
+      "name": "ComfyUI-IC-Light",
+      "url": "https://github.com/kijai/ComfyUI-IC-Light.git",
+      "description": "Relighting for better integration",
+      "required": false
+    },
+    {
+      "name": "comfyui_codeformer_simple",
+      "url": "https://github.com/Iqius/comfyui_codeformer_simple.git",
+      "description": "Face restoration with CodeFormer",
+      "required": false
+    },
+    {
+      "name": "ComfyUI_Comfyroll_CustomNodes",
+      "url": "https://github.com/Suzie1/ComfyUI_Comfyroll_CustomNodes.git",
+      "description": "Utility nodes",
+      "required": false
+    },
+    {
+      "name": "ComfyUI-Custom-Scripts",
+      "url": "https://github.com/pythongosssss/ComfyUI-Custom-Scripts.git",
+      "description": "Additional utility scripts",
+      "required": false
+    },
+    {
+      "name": "ComfyUI-WD14-Tagger",
+      "url": "https://github.com/pythongosssss/ComfyUI-WD14-Tagger.git",
+      "description": "Image tagging for prompts",
+      "required": false
+    },
+    {
+      "name": "ComfyUI_LayerStyle",
+      "url": "https://github.com/chflame163/ComfyUI_LayerStyle.git",
+      "description": "Layer style manipulation",
+      "required": false
+    }
+  ]
+}

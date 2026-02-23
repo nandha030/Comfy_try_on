@@ -33,6 +33,7 @@ comfyui-env/
 # IDE
 .idea/
 .vscode/
+.claude/
 *.swp
 *.swo
 *~
@@ -51,6 +52,7 @@ node_modules/
 frontend/node_modules/
 frontend/.next/
 frontend/out/
+.next/
 .npm
 *.tsbuildinfo
 
@@ -90,9 +92,13 @@ npm-debug.log*
 .env.*.local
 *.env
 
-# ComfyUI (if included)
+# ComfyUI (cloned by setup.py - too large for git)
 ComfyUI/
 comfyui/
+
+# Keep workflows folder (these should be versioned)
+!workflows/
+!workflows/*.json
 
 # Temporary files
 tmp/
