@@ -49,6 +49,13 @@ export interface TryOnOptions {
   seed: number;
   prompt: string;
   negative_prompt: string;
+  // Engine and workflow settings
+  engine: string;
+  codeformer_fidelity: number;
+  controlnet_strength: number;
+  mask_grow: number;
+  garment_type: string;
+  auto_mask: boolean;
 }
 
 export interface TryOnResult {
@@ -401,7 +408,7 @@ export async function batchTryon(
  */
 export async function generateLegacyTryon(
   personImage: File,
-  maskImage: File,
+  maskImage: File | null,
   options: {
     garmentImage?: File;
     prompt: string;
@@ -411,12 +418,21 @@ export async function generateLegacyTryon(
     sampler: string;
     denoise: number;
     model: string;
+    engine?: string;
+    face_restore?: boolean;
+    codeformer_fidelity?: number;
+    mask_grow?: number;
+    garment_type?: string;
+    controlnet_strength?: number;
+    auto_mask?: boolean;
   }
 ): Promise<{ job_id: string } | null> {
   try {
     const formData = new FormData();
     formData.append('person_image', personImage);
-    formData.append('mask_image', maskImage);
+    if (maskImage) {
+      formData.append('mask_image', maskImage);
+    }
 
     if (options.garmentImage) {
       formData.append('garment_image', options.garmentImage);
@@ -429,6 +445,15 @@ export async function generateLegacyTryon(
     formData.append('sampler', options.sampler);
     formData.append('denoise', options.denoise.toString());
     formData.append('model', options.model);
+
+    // New engine and workflow parameters
+    if (options.engine) formData.append('engine', options.engine);
+    if (options.face_restore !== undefined) formData.append('face_restore', options.face_restore.toString());
+    if (options.codeformer_fidelity !== undefined) formData.append('codeformer_fidelity', options.codeformer_fidelity.toString());
+    if (options.mask_grow !== undefined) formData.append('mask_grow', options.mask_grow.toString());
+    if (options.garment_type) formData.append('garment_type', options.garment_type);
+    if (options.controlnet_strength !== undefined) formData.append('controlnet_strength', options.controlnet_strength.toString());
+    if (options.auto_mask !== undefined) formData.append('auto_mask', options.auto_mask.toString());
 
     const response = await fetch(`${API_BASE}/tryon`, {
       method: 'POST',

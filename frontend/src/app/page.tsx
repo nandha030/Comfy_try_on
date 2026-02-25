@@ -33,13 +33,30 @@ interface GenerationSettings {
   upscale: boolean
   faceRestore: boolean
   selectedProfileId: string
+  // Engine and workflow settings
+  engine: string
+  codeformerFidelity: number
+  controlnetStrength: number
+  maskGrow: number
+  autoMask: boolean
 }
+
+type GarmentType = 'top' | 'bottom' | 'dress' | 'full' | 'none' | 'remove'
+
+const GARMENT_TYPE_OPTIONS: { id: GarmentType; label: string; description: string }[] = [
+  { id: 'top', label: 'Top / Inner', description: 'Shirts, blouses, innerwear' },
+  { id: 'bottom', label: 'Bottom', description: 'Pants, skirts' },
+  { id: 'dress', label: 'Dress', description: 'Full dresses' },
+  { id: 'full', label: 'Full Outfit', description: 'All clothing' },
+  { id: 'none', label: 'No Garment (Pose Only)', description: 'Pose-based generation' },
+  { id: 'remove', label: 'Remove Clothing', description: 'Strip all garments, preserve body & skin tone' },
+]
 
 const DEFAULT_SETTINGS: GenerationSettings = {
   prompt: 'person wearing elegant garment, professional fashion photography, high quality, detailed fabric texture',
   negativePrompt: 'blurry, distorted, low quality, deformed, bad anatomy, ugly, disfigured',
-  steps: 15,
-  cfgScale: 7.0,
+  steps: 35,
+  cfgScale: 2.5,
   sampler: 'euler_ancestral',
   denoise: 0.85,
   model: 'realisticVision',
@@ -49,6 +66,12 @@ const DEFAULT_SETTINGS: GenerationSettings = {
   upscale: false,
   faceRestore: true,
   selectedProfileId: '',
+  // Engine defaults
+  engine: 'catvton',
+  codeformerFidelity: 0.7,
+  controlnetStrength: 0.8,
+  maskGrow: 25,
+  autoMask: true,
 }
 
 // Preset prompts for different garment categories
@@ -75,6 +98,7 @@ export default function Home() {
   const [progress, setProgress] = useState(0)
   const [settings, setSettings] = useState<GenerationSettings>(DEFAULT_SETTINGS)
   const [selectedCategory, setSelectedCategory] = useState<string>('everyday')
+  const [garmentType, setGarmentType] = useState<GarmentType>('top')
   const [availableModels, setAvailableModels] = useState<Array<{name: string, file: string}>>([])
   const [systemStatus, setSystemStatus] = useState<'healthy' | 'degraded' | 'loading'>('loading')
 
@@ -160,8 +184,12 @@ export default function Home() {
   }
 
   const handleGenerate = async () => {
-    if (!personImage || !maskImage) {
-      alert('Please upload images first')
+    if (!personImage) {
+      alert('Please upload a person image first')
+      return
+    }
+    if (!maskImage && !settings.autoMask) {
+      alert('Please create a mask or enable auto-mask')
       return
     }
 
@@ -171,11 +199,12 @@ export default function Home() {
     setUsedSeed(null)
 
     // Try V2 API first if available and enabled
-    if (v2Available && (settings.preserveFace || settings.preserveSkinTone)) {
+    // Skip V2 for 'remove' and 'none' modes — these use dedicated ComfyUI workflows
+    if (v2Available && (settings.preserveFace || settings.preserveSkinTone) && garmentType !== 'remove' && garmentType !== 'none') {
       try {
         const result = await generateAdvancedTryon(personImage, {
           garmentImage: garmentImage || undefined,
-          maskImage: maskImage,
+          maskImage: maskImage || undefined,
           profileId: settings.selectedProfileId || undefined,
           preserve_face: settings.preserveFace,
           preserve_skin_tone: settings.preserveSkinTone,
@@ -207,8 +236,10 @@ export default function Home() {
     // Legacy API fallback
     const formData = new FormData()
     formData.append('person_image', personImage)
-    formData.append('mask_image', maskImage)
-    if (garmentImage) {
+    if (maskImage) {
+      formData.append('mask_image', maskImage)
+    }
+    if (garmentImage && garmentType !== 'none' && garmentType !== 'remove') {
       formData.append('garment_image', garmentImage)
     }
     formData.append('prompt', settings.prompt)
@@ -218,6 +249,13 @@ export default function Home() {
     formData.append('sampler', settings.sampler)
     formData.append('denoise', settings.denoise.toString())
     formData.append('model', settings.model)
+    formData.append('engine', settings.engine)
+    formData.append('face_restore', settings.faceRestore.toString())
+    formData.append('codeformer_fidelity', settings.codeformerFidelity.toString())
+    formData.append('mask_grow', settings.maskGrow.toString())
+    formData.append('garment_type', garmentType)
+    formData.append('controlnet_strength', settings.controlnetStrength.toString())
+    formData.append('auto_mask', settings.autoMask.toString())
 
     try {
       const response = await fetch('/api/tryon', {
@@ -421,24 +459,124 @@ export default function Home() {
                       )}
                     </div>
 
-                    <div>
-                      <h3 className="font-medium mb-2">Garment Reference (Optional)</h3>
-                      <ImageUploader
-                        onUpload={handleGarmentUpload}
-                        accept={{ 'image/*': ['.png', '.jpg', '.jpeg'] }}
-                        label="Drop garment image"
-                        preview={garmentImage ? URL.createObjectURL(garmentImage) : undefined}
-                      />
+                    {garmentType !== 'none' && garmentType !== 'remove' && (
+                      <div>
+                        <h3 className="font-medium mb-2">Garment Reference (Optional)</h3>
+                        <ImageUploader
+                          onUpload={handleGarmentUpload}
+                          accept={{ 'image/*': ['.png', '.jpg', '.jpeg'] }}
+                          label="Drop garment image"
+                          preview={garmentImage ? URL.createObjectURL(garmentImage) : undefined}
+                        />
+                      </div>
+                    )}
+                    {garmentType === 'none' && (
+                      <div className="flex items-center justify-center border-2 border-dashed border-gray-200 rounded-xl p-8 bg-gray-50">
+                        <div className="text-center text-gray-500">
+                          <p className="font-medium">Pose-Only Mode</p>
+                          <p className="text-sm mt-1">No garment needed. The model will be generated with pose-based inpainting.</p>
+                        </div>
+                      </div>
+                    )}
+                    {garmentType === 'remove' && (
+                      <div className="flex items-center justify-center border-2 border-dashed border-amber-200 rounded-xl p-8 bg-amber-50">
+                        <div className="text-center text-amber-700">
+                          <p className="font-medium">Remove Clothing Mode</p>
+                          <p className="text-sm mt-1">All garments will be removed. Face, skin tone, and body proportions are preserved.</p>
+                          <p className="text-xs mt-2 text-amber-500">Uses ControlNet OpenPose + CodeFormer for identity preservation</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Garment Type Selector */}
+                  <div>
+                    <label className="block font-medium mb-2">Garment Type</label>
+                    <div className="flex flex-wrap gap-2">
+                      {GARMENT_TYPE_OPTIONS.map((type) => (
+                        <button
+                          key={type.id}
+                          onClick={() => {
+                            setGarmentType(type.id)
+                            if (type.id === 'none') {
+                              setSettings(s => ({ ...s, prompt: 'person in natural pose, professional photography, high quality, detailed skin texture' }))
+                            } else if (type.id === 'remove') {
+                              setSettings(s => ({ ...s, prompt: 'bare skin, natural body, same skin tone, photorealistic, professional photography, high quality' }))
+                            }
+                          }}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium transition border ${
+                            garmentType === type.id
+                              ? 'bg-indigo-500 text-white border-indigo-500'
+                              : 'bg-white text-gray-700 border-gray-200 hover:border-indigo-300 hover:bg-indigo-50'
+                          }`}
+                          title={type.description}
+                        >
+                          {type.label}
+                        </button>
+                      ))}
                     </div>
                   </div>
 
-                  <button
-                    onClick={() => personImage && setStep('mask')}
-                    disabled={!personImage}
-                    className="w-full py-3 bg-indigo-500 text-white rounded-lg font-medium disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-indigo-600 transition"
-                  >
-                    Continue to Mask
-                  </button>
+                  {/* Engine Selector */}
+                  <div>
+                    <label className="block font-medium mb-2">Try-On Engine</label>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setSettings(s => ({ ...s, engine: 'catvton' }))}
+                        className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition border ${
+                          settings.engine === 'catvton'
+                            ? 'bg-indigo-500 text-white border-indigo-500'
+                            : 'bg-white text-gray-700 border-gray-200 hover:border-indigo-300'
+                        }`}
+                      >
+                        CatVTON (Recommended)
+                      </button>
+                      <button
+                        onClick={() => setSettings(s => ({ ...s, engine: 'idmvton' }))}
+                        className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition border ${
+                          settings.engine === 'idmvton'
+                            ? 'bg-indigo-500 text-white border-indigo-500'
+                            : 'bg-white text-gray-700 border-gray-200 hover:border-indigo-300'
+                        }`}
+                      >
+                        IDM-VTON (Higher Quality)
+                      </button>
+                    </div>
+                    {settings.engine === 'idmvton' && (
+                      <p className="text-xs text-amber-600 mt-1">
+                        IDM-VTON uses SDXL and is much slower on CPU (15-30 min). Recommended for final quality output.
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => {
+                        if (personImage) {
+                          if (settings.autoMask) {
+                            setStep('generate')
+                          } else {
+                            setStep('mask')
+                          }
+                        }
+                      }}
+                      disabled={!personImage}
+                      className="flex-1 py-3 bg-indigo-500 text-white rounded-lg font-medium disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-indigo-600 transition"
+                    >
+                      {settings.autoMask ? 'Continue to Generate (Auto-Mask)' : 'Continue to Mask'}
+                    </button>
+                    {settings.autoMask && (
+                      <button
+                        onClick={() => {
+                          if (personImage) setStep('mask')
+                        }}
+                        disabled={!personImage}
+                        className="px-4 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium disabled:bg-gray-100 disabled:cursor-not-allowed hover:bg-gray-50 transition text-sm"
+                      >
+                        Manual Mask
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -452,6 +590,7 @@ export default function Home() {
                   <MaskEditor
                     image={personImage}
                     onMaskCreate={handleMaskCreate}
+                    onSkipMask={() => setStep('generate')}
                   />
 
                   <button
@@ -635,6 +774,59 @@ export default function Home() {
                             <option value="deliberate">Deliberate</option>
                             <option value="dreamshaper">DreamShaper</option>
                           </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Face Fidelity: {settings.codeformerFidelity}</label>
+                          <input
+                            type="range"
+                            min="0.0"
+                            max="1.0"
+                            step="0.1"
+                            value={settings.codeformerFidelity}
+                            onChange={(e) => setSettings(s => ({ ...s, codeformerFidelity: Number(e.target.value) }))}
+                            className="w-full"
+                          />
+                          <p className="text-xs text-gray-400">0 = quality, 1 = fidelity to original face</p>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium mb-1">ControlNet Strength: {settings.controlnetStrength}</label>
+                          <input
+                            type="range"
+                            min="0.0"
+                            max="1.5"
+                            step="0.1"
+                            value={settings.controlnetStrength}
+                            onChange={(e) => setSettings(s => ({ ...s, controlnetStrength: Number(e.target.value) }))}
+                            className="w-full"
+                          />
+                          <p className="text-xs text-gray-400">Pose preservation strength (no-garment mode)</p>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Mask Grow: {settings.maskGrow}</label>
+                          <input
+                            type="range"
+                            min="-10"
+                            max="50"
+                            value={settings.maskGrow}
+                            onChange={(e) => setSettings(s => ({ ...s, maskGrow: Number(e.target.value) }))}
+                            className="w-full"
+                          />
+                          <p className="text-xs text-gray-400">Expand mask edges for clean blending</p>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={settings.faceRestore}
+                              onChange={(e) => setSettings(s => ({ ...s, faceRestore: e.target.checked }))}
+                              className="rounded text-indigo-600"
+                            />
+                            <span className="text-sm font-medium">Face Restore (CodeFormer)</span>
+                          </label>
                         </div>
                       </div>
                     </div>

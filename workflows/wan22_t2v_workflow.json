@@ -1,0 +1,364 @@
+{
+  "last_node_id": 9,
+  "last_link_id": 12,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "UNETLoader",
+      "pos": [50, 50],
+      "size": {"0": 315, "1": 82},
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [1],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {"Node name for S&R": "UNETLoader"},
+      "widgets_values": ["Wan2.2-T2V-A14B/high_noise_model/diffusion_pytorch_model.safetensors.index.json", "default"]
+    },
+    {
+      "id": 2,
+      "type": "CLIPLoader",
+      "pos": [50, 200],
+      "size": {"0": 315, "1": 82},
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [2, 3],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {"Node name for S&R": "CLIPLoader"},
+      "widgets_values": ["models_t5_umt5-xxl-enc-bf16.pth", "wan"]
+    },
+    {
+      "id": 3,
+      "type": "CLIPTextEncode",
+      "pos": [430, 50],
+      "size": {"0": 425, "1": 180},
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 2,
+          "slot_index": 0
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [4],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "title": "Positive Prompt",
+      "properties": {"Node name for S&R": "CLIPTextEncode"},
+      "widgets_values": ["A breathtaking aerial view of mountain ranges with snow-capped peaks, cinematic 4K footage, smooth slow camera movement, golden hour lighting, photorealistic, high detail"]
+    },
+    {
+      "id": 4,
+      "type": "CLIPTextEncode",
+      "pos": [430, 280],
+      "size": {"0": 425, "1": 180},
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 3,
+          "slot_index": 0
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [5],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "title": "Negative Prompt",
+      "properties": {"Node name for S&R": "CLIPTextEncode"},
+      "widgets_values": ["blurry, low quality, watermark, text overlay, distorted, static, noisy, artifacts, overexposed, underexposed"]
+    },
+    {
+      "id": 5,
+      "type": "VAELoader",
+      "pos": [50, 380],
+      "size": {"0": 315, "1": 58},
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": [6, 7],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {"Node name for S&R": "VAELoader"},
+      "widgets_values": ["Wan2.1_VAE.pth"]
+    },
+    {
+      "id": 6,
+      "type": "WanImageToVideo",
+      "pos": [920, 120],
+      "size": {"0": 350, "1": 246},
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "positive",
+          "type": "CONDITIONING",
+          "link": 4,
+          "slot_index": 0
+        },
+        {
+          "name": "negative",
+          "type": "CONDITIONING",
+          "link": 5,
+          "slot_index": 1
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 6,
+          "slot_index": 2
+        }
+      ],
+      "outputs": [
+        {
+          "name": "positive",
+          "type": "CONDITIONING",
+          "links": [8],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "negative",
+          "type": "CONDITIONING",
+          "links": [9],
+          "shape": 3,
+          "slot_index": 1
+        },
+        {
+          "name": "latent",
+          "type": "LATENT",
+          "links": [10],
+          "shape": 3,
+          "slot_index": 2
+        }
+      ],
+      "properties": {"Node name for S&R": "WanImageToVideo"},
+      "widgets_values": [832, 480, 81, 1]
+    },
+    {
+      "id": 7,
+      "type": "KSampler",
+      "pos": [1330, 80],
+      "size": {"0": 315, "1": 262},
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 1,
+          "slot_index": 0
+        },
+        {
+          "name": "positive",
+          "type": "CONDITIONING",
+          "link": 8,
+          "slot_index": 1
+        },
+        {
+          "name": "negative",
+          "type": "CONDITIONING",
+          "link": 9,
+          "slot_index": 2
+        },
+        {
+          "name": "latent_image",
+          "type": "LATENT",
+          "link": 10,
+          "slot_index": 3
+        }
+      ],
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [11],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {"Node name for S&R": "KSampler"},
+      "widgets_values": [42, "randomize", 30, 6.0, "euler", "simple", 1.0]
+    },
+    {
+      "id": 8,
+      "type": "VAEDecode",
+      "pos": [1700, 180],
+      "size": {"0": 210, "1": 46},
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "samples",
+          "type": "LATENT",
+          "link": 11,
+          "slot_index": 0
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 7,
+          "slot_index": 1
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [12],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {"Node name for S&R": "VAEDecode"},
+      "widgets_values": []
+    },
+    {
+      "id": 9,
+      "type": "SaveWEBM",
+      "pos": [1970, 180],
+      "size": {"0": 315, "1": 130},
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 12,
+          "slot_index": 0
+        }
+      ],
+      "outputs": [],
+      "properties": {"Node name for S&R": "SaveWEBM"},
+      "widgets_values": ["wan22_t2v", "vp9", 16.0, 32.0]
+    }
+  ],
+  "links": [
+    [1,  1, 0,  7, 0, "MODEL"],
+    [2,  2, 0,  3, 0, "CLIP"],
+    [3,  2, 0,  4, 0, "CLIP"],
+    [4,  3, 0,  6, 0, "CONDITIONING"],
+    [5,  4, 0,  6, 1, "CONDITIONING"],
+    [6,  5, 0,  6, 2, "VAE"],
+    [7,  5, 0,  8, 1, "VAE"],
+    [8,  6, 0,  7, 1, "CONDITIONING"],
+    [9,  6, 1,  7, 2, "CONDITIONING"],
+    [10, 6, 2,  7, 3, "LATENT"],
+    [11, 7, 0,  8, 0, "LATENT"],
+    [12, 8, 0,  9, 0, "IMAGE"]
+  ],
+  "groups": [
+    {
+      "title": "1. Model Loaders",
+      "bounding": [30, 20, 360, 460],
+      "color": "#3f789e",
+      "font_size": 14
+    },
+    {
+      "title": "2. Text Prompts",
+      "bounding": [405, 20, 470, 460],
+      "color": "#458B45",
+      "font_size": 14
+    },
+    {
+      "title": "3. Video Conditioning",
+      "bounding": [895, 20, 390, 370],
+      "color": "#8B6914",
+      "font_size": 14
+    },
+    {
+      "title": "4. Sampling & Decode",
+      "bounding": [1305, 20, 1010, 430],
+      "color": "#6e3d6e",
+      "font_size": 14
+    }
+  ],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.75,
+      "offset": [-20, -10]
+    },
+    "_comments": {
+      "workflow": "Wan2.2 Text-to-Video (T2V) Pipeline",
+      "description": "Generates 5-second (81 frames @16fps) 480x832 video from text prompt",
+      "models_required": {
+        "diffusion_model": {
+          "file": "wan2.2_t2v_14B_bf16.safetensors",
+          "dest": "models/diffusion_models/",
+          "size": "~28GB",
+          "source": "Wan-AI/Wan2.2-T2V-14B on HuggingFace",
+          "alt_1.3B": "wan2.2_t2v_1.3B_bf16.safetensors (~2.6GB, faster, lower quality)"
+        },
+        "text_encoder": {
+          "file": "umt5-xxl-enc-bf16.safetensors",
+          "dest": "models/text_encoders/",
+          "size": "~10GB",
+          "source": "Wan-AI/Wan2.2-T2V-14B on HuggingFace"
+        },
+        "vae": {
+          "file": "wan_2.1_vae.safetensors",
+          "dest": "models/vae/",
+          "size": "~1.5GB",
+          "source": "Wan-AI/Wan2.1-T2V-14B on HuggingFace"
+        }
+      },
+      "key_settings": {
+        "width": 832,
+        "height": 480,
+        "frames": "81 (= 5 sec @ 16fps). Must be 4N+1: 17, 33, 49, 65, 81",
+        "steps": 30,
+        "cfg": 6.0,
+        "sampler": "euler + simple scheduler",
+        "output": "WEBM (VP9 codec) in ComfyUI/output/"
+      },
+      "for_longer_videos": "Run this workflow N times with different prompts, then concatenate with FFmpeg: ffmpeg -f concat -safe 0 -i filelist.txt -c copy output_full.mp4"
+    }
+  },
+  "version": 0.4
+}
