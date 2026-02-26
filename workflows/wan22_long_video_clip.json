@@ -181,8 +181,8 @@
           "slot_index": 2
         }
       ],
-      "title": "Video Setup (832x480, 81 frames = 5sec)",
-      "widgets_values": [832, 480, 81, 1],
+      "title": "Video Setup (832x480, 161 frames = 10sec)",
+      "widgets_values": [832, 480, 161, 1],
       "properties": {}
     },
     {
@@ -333,7 +333,7 @@
       "step2": "Queue the workflow — generates one 5-second clip (~81 frames @ 16fps)",
       "step3": "Repeat with different prompts to generate more clips",
       "step4": "Stitch clips into a long video: python scripts/generate_long_video.py --subject '...' --background '...' --duration 3 --output final.mp4",
-      "frames": "81 = 5 sec. Change to 17/33/49/65 for shorter clips (must be 4N+1)",
+      "frames": "161 = 10 sec. Other options: 81=5sec, 121=7.5sec, 201=12.5sec (must be 4N+1)",
       "resolution": "832x480 (landscape). Swap to 480x832 for portrait/vertical video"
     }
   },
