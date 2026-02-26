@@ -119,3 +119,4 @@ htmlcov/
 .coverage
 .coverage.*
 coverage.xml
+workflows/wan22_t2v_workflow.json
