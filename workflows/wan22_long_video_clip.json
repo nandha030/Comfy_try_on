@@ -1,0 +1,341 @@
+{
+  "last_node_id": 9,
+  "last_link_id": 12,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "UNETLoader",
+      "pos": [50, 50],
+      "size": [315, 82],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [1],
+          "slot_index": 0
+        }
+      ],
+      "title": "Load Wan2.2 Model",
+      "widgets_values": [
+        "Wan2.2-T2V-A14B/high_noise_model/diffusion_pytorch_model.safetensors.index.json",
+        "default"
+      ],
+      "properties": {}
+    },
+    {
+      "id": 2,
+      "type": "CLIPLoader",
+      "pos": [50, 200],
+      "size": [315, 82],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [2, 3],
+          "slot_index": 0
+        }
+      ],
+      "title": "Load Text Encoder",
+      "widgets_values": [
+        "models_t5_umt5-xxl-enc-bf16.pth",
+        "wan"
+      ],
+      "properties": {}
+    },
+    {
+      "id": 3,
+      "type": "VAELoader",
+      "pos": [50, 370],
+      "size": [315, 58],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": [6, 7],
+          "slot_index": 0
+        }
+      ],
+      "title": "Load VAE",
+      "widgets_values": [
+        "Wan2.1_VAE.pth"
+      ],
+      "properties": {}
+    },
+    {
+      "id": 4,
+      "type": "CLIPTextEncode",
+      "pos": [430, 50],
+      "size": [425, 200],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 2,
+          "slot_index": 0
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [4],
+          "slot_index": 0
+        }
+      ],
+      "title": "Positive Prompt — Edit subject & background here",
+      "widgets_values": [
+        "a beautiful fashion model with long black hair wearing a red evening gown, luxury hotel lobby with marble floors and golden chandeliers, walking gracefully, elegant slow motion, cinematic 4K, photorealistic, high detail, smooth camera movement, golden hour lighting"
+      ],
+      "properties": {}
+    },
+    {
+      "id": 5,
+      "type": "CLIPTextEncode",
+      "pos": [430, 300],
+      "size": [425, 180],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 3,
+          "slot_index": 0
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [5],
+          "slot_index": 0
+        }
+      ],
+      "title": "Negative Prompt",
+      "widgets_values": [
+        "blurry, low quality, watermark, text overlay, distorted, static, noisy, artifacts, overexposed, underexposed, bad anatomy, deformed face, extra limbs, disfigured, ugly"
+      ],
+      "properties": {}
+    },
+    {
+      "id": 6,
+      "type": "WanImageToVideo",
+      "pos": [930, 120],
+      "size": [350, 246],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "positive",
+          "type": "CONDITIONING",
+          "link": 4,
+          "slot_index": 0
+        },
+        {
+          "name": "negative",
+          "type": "CONDITIONING",
+          "link": 5,
+          "slot_index": 1
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 6,
+          "slot_index": 2
+        }
+      ],
+      "outputs": [
+        {
+          "name": "positive",
+          "type": "CONDITIONING",
+          "links": [8],
+          "slot_index": 0
+        },
+        {
+          "name": "negative",
+          "type": "CONDITIONING",
+          "links": [9],
+          "slot_index": 1
+        },
+        {
+          "name": "latent",
+          "type": "LATENT",
+          "links": [10],
+          "slot_index": 2
+        }
+      ],
+      "title": "Video Setup (832x480, 81 frames = 5sec)",
+      "widgets_values": [832, 480, 81, 1],
+      "properties": {}
+    },
+    {
+      "id": 7,
+      "type": "KSampler",
+      "pos": [1340, 80],
+      "size": [315, 262],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 1,
+          "slot_index": 0
+        },
+        {
+          "name": "positive",
+          "type": "CONDITIONING",
+          "link": 8,
+          "slot_index": 1
+        },
+        {
+          "name": "negative",
+          "type": "CONDITIONING",
+          "link": 9,
+          "slot_index": 2
+        },
+        {
+          "name": "latent_image",
+          "type": "LATENT",
+          "link": 10,
+          "slot_index": 3
+        }
+      ],
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [11],
+          "slot_index": 0
+        }
+      ],
+      "title": "Sampler (steps=30, cfg=6)",
+      "widgets_values": [42, "randomize", 30, 6.0, "euler", "simple", 1.0],
+      "properties": {}
+    },
+    {
+      "id": 8,
+      "type": "VAEDecode",
+      "pos": [1710, 180],
+      "size": [210, 46],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "samples",
+          "type": "LATENT",
+          "link": 11,
+          "slot_index": 0
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 7,
+          "slot_index": 1
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [12],
+          "slot_index": 0
+        }
+      ],
+      "title": "Decode Frames",
+      "properties": {}
+    },
+    {
+      "id": 9,
+      "type": "SaveWEBM",
+      "pos": [1980, 180],
+      "size": [315, 130],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 12,
+          "slot_index": 0
+        }
+      ],
+      "outputs": [],
+      "title": "Save Clip as WEBM",
+      "widgets_values": ["model_clip", "vp9", 16.0, 32.0],
+      "properties": {}
+    }
+  ],
+  "links": [
+    [1,  1, 0,  7, 0, "MODEL"],
+    [2,  2, 0,  4, 0, "CLIP"],
+    [3,  2, 0,  5, 0, "CLIP"],
+    [4,  4, 0,  6, 0, "CONDITIONING"],
+    [5,  5, 0,  6, 1, "CONDITIONING"],
+    [6,  3, 0,  6, 2, "VAE"],
+    [7,  3, 0,  8, 1, "VAE"],
+    [8,  6, 0,  7, 1, "CONDITIONING"],
+    [9,  6, 1,  7, 2, "CONDITIONING"],
+    [10, 6, 2,  7, 3, "LATENT"],
+    [11, 7, 0,  8, 0, "LATENT"],
+    [12, 8, 0,  9, 0, "IMAGE"]
+  ],
+  "groups": [
+    {
+      "title": "1. Model Loaders",
+      "bounding": [25, 25, 365, 430],
+      "color": "#3f789e",
+      "font_size": 14
+    },
+    {
+      "title": "2. Prompts — Edit here for each clip",
+      "bounding": [405, 25, 475, 480],
+      "color": "#458B45",
+      "font_size": 14
+    },
+    {
+      "title": "3. Video Conditioning (resolution & length)",
+      "bounding": [905, 25, 395, 370],
+      "color": "#8B6914",
+      "font_size": 14
+    },
+    {
+      "title": "4. Sample → Decode → Save",
+      "bounding": [1315, 25, 1000, 330],
+      "color": "#6e3d6e",
+      "font_size": 14
+    }
+  ],
+  "config": {},
+  "extra": {
+    "_how_to_use": {
+      "step1": "Edit the Positive Prompt node — describe your subject, background, and action",
+      "step2": "Queue the workflow — generates one 5-second clip (~81 frames @ 16fps)",
+      "step3": "Repeat with different prompts to generate more clips",
+      "step4": "Stitch clips into a long video: python scripts/generate_long_video.py --subject '...' --background '...' --duration 3 --output final.mp4",
+      "frames": "81 = 5 sec. Change to 17/33/49/65 for shorter clips (must be 4N+1)",
+      "resolution": "832x480 (landscape). Swap to 480x832 for portrait/vertical video"
+    }
+  },
+  "version": 0.4
+}
