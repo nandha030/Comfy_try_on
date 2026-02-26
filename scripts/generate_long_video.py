@@ -1,24 +1,42 @@
 #!/usr/bin/env python3
 """
-generate_long_video.py — Generate 1–5 minute videos using Wan2.2 T2V via ComfyUI API.
+generate_long_video.py — Generate 60–180 second (1–3 min) videos using Wan2.2 T2V via ComfyUI API.
 
-Each clip is ~5 seconds (81 frames @ 16fps). Multiple clips are queued,
-waited on, then stitched together with FFmpeg.
+WHY A SCRIPT AND NOT A SINGLE WORKFLOW:
+  Wan2.2 has a memory limit of ~10 seconds per generation pass.
+  This script queues multiple 10-second clips automatically via the
+  ComfyUI API, waits for each to finish, then stitches them all
+  into one MP4 using FFmpeg.
+
+  60 sec  →  6 clips  × 10 sec
+  120 sec → 12 clips  × 10 sec
+  180 sec → 18 clips  × 10 sec
 
 Usage examples:
+  # 1 minute video
   python generate_long_video.py \
       --subject "a female fashion model with long black hair, wearing a red evening gown" \
       --background "luxury hotel lobby with marble floors and golden lighting" \
-      --prompt "walking gracefully, confident pose, cinematic 4K, smooth camera movement" \
-      --duration 2 \
-      --output my_fashion_video.mp4
+      --prompt "walking gracefully, confident pose, smooth camera movement" \
+      --duration 60 \
+      --output fashion_1min.mp4
 
+  # 3 minute video
   python generate_long_video.py \
       --subject "a male model in a tailored grey suit" \
       --background "modern city rooftop at sunset" \
-      --duration 1 \
+      --duration 180 \
+      --output fashion_3min.mp4
+
+  # Quick test (30 seconds, fewer steps)
+  python generate_long_video.py \
+      --subject "a model in casual streetwear" \
+      --background "busy city street" \
+      --duration 30 \
       --steps 20 \
-      --output quick_test.mp4
+      --output test_30sec.mp4
+
+NOTE: --duration is in SECONDS (not minutes).
 """
 
 import argparse
@@ -40,9 +58,9 @@ UNET_MODEL  = "Wan2.2-T2V-A14B/high_noise_model/diffusion_pytorch_model.safetens
 CLIP_MODEL  = "models_t5_umt5-xxl-enc-bf16.pth"
 VAE_MODEL   = "Wan2.1_VAE.pth"
 
-FRAMES_PER_CLIP = 81   # = 5.0625 sec @ 16fps  (must be 4N+1: 17,33,49,65,81)
+FRAMES_PER_CLIP = 161  # = 10.0625 sec @ 16fps  (must be 4N+1: 81,121,161,201,241)
 FPS             = 16
-CLIP_DURATION   = FRAMES_PER_CLIP / FPS   # ~5.06 seconds
+CLIP_DURATION   = FRAMES_PER_CLIP / FPS   # ~10.06 seconds
 
 DEFAULT_NEG = (
     "blurry, low quality, watermark, text overlay, distorted, "
@@ -264,8 +282,8 @@ def main():
                         help="Extra action/style details appended to each clip prompt")
     parser.add_argument("--negative",   default=DEFAULT_NEG,
                         help="Negative prompt (what to avoid)")
-    parser.add_argument("--duration",   type=float, default=1.0,
-                        help="Target duration in minutes (default: 1, range: 0.5–5)")
+    parser.add_argument("--duration",   type=float, default=60.0,
+                        help="Target duration in SECONDS (default: 60, range: 10–600)")
     parser.add_argument("--steps",      type=int,   default=30,
                         help="Diffusion steps per clip (default: 30; use 20 for faster/lower quality)")
     parser.add_argument("--seed",       type=int,   default=-1,
@@ -280,20 +298,20 @@ def main():
     COMFYUI_URL = args.comfyui_url.rstrip("/")
 
     # Validate duration
-    if not 0.1 <= args.duration <= 10:
-        print("ERROR: --duration must be between 0.1 and 10 minutes")
+    if not 10 <= args.duration <= 600:
+        print("ERROR: --duration must be between 10 and 600 seconds")
         sys.exit(1)
 
-    total_seconds = args.duration * 60
+    total_seconds = args.duration
     num_clips     = max(1, round(total_seconds / CLIP_DURATION))
-    actual_mins   = (num_clips * CLIP_DURATION) / 60
+    actual_secs   = num_clips * CLIP_DURATION
 
     print("=" * 60)
     print("  Wan2.2 Long Video Generator")
     print("=" * 60)
     print(f"  Subject    : {args.subject}")
     print(f"  Background : {args.background}")
-    print(f"  Duration   : {args.duration} min → {num_clips} clips ({actual_mins:.1f} min actual)")
+    print(f"  Duration   : {args.duration:.0f}s → {num_clips} clips × 10s ({actual_secs:.0f}s actual)")
     print(f"  Steps/clip : {args.steps}")
     print(f"  Output     : {args.output}")
     print("=" * 60)
@@ -343,7 +361,7 @@ def main():
 
     actual_duration = len(clip_files) * CLIP_DURATION
     print(f"\nFinal video: {args.output}")
-    print(f"Duration   : {actual_duration:.1f} seconds ({actual_duration/60:.1f} minutes)")
+    print(f"Duration   : {actual_duration:.0f} seconds ({actual_duration/60:.1f} minutes)")
     print(f"Resolution : {WIDTH}x{HEIGHT} @ {FPS}fps")
 
 
